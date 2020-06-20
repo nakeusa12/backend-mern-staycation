@@ -170,6 +170,7 @@ module.exports = {
       const item = await Item.find()
         .populate({ path: "imageId", select: "id imageUrl" })
         .populate({ path: "categoryId", select: "id name" });
+
       const category = await Category.find();
       const alertMessage = req.flash("alertMessage");
       const alertStatus = req.flash("alertStatus");
@@ -180,6 +181,7 @@ module.exports = {
         alert,
         item,
         action: "view",
+        user: req.session.user,
       });
     } catch (error) {
       req.flash("alertMessage", `${error.message}`);
@@ -194,7 +196,7 @@ module.exports = {
       if (req.files.length > 0) {
         const category = await Category.findOne({ _id: categoryId });
         const newItem = {
-          categoryId: category._id,
+          categoryId,
           title,
           description: about,
           price,
@@ -210,7 +212,7 @@ module.exports = {
           item.imageId.push({ _id: imageSave._id });
           await item.save();
         }
-        req.flash("alertMessage", "Success Add Bank");
+        req.flash("alertMessage", "Success Add Item");
         req.flash("alertStatus", "success");
         res.redirect("/admin/item");
       }
@@ -228,7 +230,6 @@ module.exports = {
         path: "imageId",
         select: "id imageUrl",
       });
-
       const alertMessage = req.flash("alertMessage");
       const alertStatus = req.flash("alertStatus");
       const alert = { message: alertMessage, status: alertStatus };
@@ -237,6 +238,7 @@ module.exports = {
         alert,
         item,
         action: "show image",
+        user: req.session.user,
       });
     } catch (error) {
       req.flash("alertMessage", `${error.message}`);
@@ -249,12 +251,8 @@ module.exports = {
     try {
       const { id } = req.params;
       const item = await Item.findOne({ _id: id })
-        .populate({
-          path: "imageId",
-          select: "id imageUrl",
-        })
+        .populate({ path: "imageId", select: "id imageUrl" })
         .populate({ path: "categoryId", select: "id name" });
-
       const category = await Category.find();
       const alertMessage = req.flash("alertMessage");
       const alertStatus = req.flash("alertStatus");
@@ -265,7 +263,77 @@ module.exports = {
         item,
         category,
         action: "edit",
+        user: req.session.user,
       });
+    } catch (error) {
+      req.flash("alertMessage", `${error.message}`);
+      req.flash("alertStatus", "danger");
+      res.redirect("/admin/item");
+    }
+  },
+
+  editItem: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { categoryId, title, price, city, about } = req.body;
+      const item = await Item.findOne({ _id: id })
+        .populate({ path: "imageId", select: "id imageUrl" })
+        .populate({ path: "categoryId", select: "id name" });
+
+      if (req.files.length > 0) {
+        for (let i = 0; i < item.imageId.length; i++) {
+          const imageUpdate = await Image.findOne({ _id: item.imageId[i]._id });
+          await fs.unlink(path.join(`public/${imageUpdate.imageUrl}`));
+          imageUpdate.imageUrl = `images/${req.files[i].filename}`;
+          await imageUpdate.save();
+        }
+        item.title = title;
+        item.price = price;
+        item.city = city;
+        item.description = about;
+        item.categoryId = categoryId;
+        await item.save();
+        req.flash("alertMessage", "Success update Item");
+        req.flash("alertStatus", "success");
+        res.redirect("/admin/item");
+      } else {
+        item.title = title;
+        item.price = price;
+        item.city = city;
+        item.description = about;
+        item.categoryId = categoryId;
+        await item.save();
+        req.flash("alertMessage", "Success update Item");
+        req.flash("alertStatus", "success");
+        res.redirect("/admin/item");
+      }
+    } catch (error) {
+      req.flash("alertMessage", `${error.message}`);
+      req.flash("alertStatus", "danger");
+      res.redirect("/admin/item");
+    }
+  },
+
+  deleteItem: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const item = await Item.findOne({ _id: id }).populate("imageId");
+      for (let i = 0; i < item.imageId.length; i++) {
+        Image.findOne({ _id: item.imageId[i]._id })
+          .then((image) => {
+            fs.unlink(path.join(`public/${image.imageUrl}`));
+            image.remove();
+          })
+          .catch((error) => {
+            req.flash("alertMessage", `${error.message}`);
+            req.flash("alertStatus", "danger");
+            res.redirect("/admin/item");
+          });
+      }
+      await item.remove();
+      req.flash("alertMessage", "Success delete Item");
+      req.flash("alertStatus", "success");
+      res.redirect("/admin/item");
     } catch (error) {
       req.flash("alertMessage", `${error.message}`);
       req.flash("alertStatus", "danger");
