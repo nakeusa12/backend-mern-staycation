@@ -7,6 +7,7 @@ router.get("/signin", adminController.viewSignin);
 
 router.post("/signin", adminController.actionSignin);
 router.use(auth);
+router.get("/logout", adminController.actionLogout);
 
 router.get("/dashboard", adminController.viewDashboard);
 // -----
