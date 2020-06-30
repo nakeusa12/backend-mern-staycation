@@ -4,21 +4,21 @@
   role="tabpanel"
   aria-labelledby="home-tab"
 >
+  <!-- DataTales Example -->
   <div class="row">
-    <!-- DataTales Example -->
-    <% for(let x = 0; x< item.imageId.length; x++) { %>
+    <% for(let x = 0; x < item.imageId.length; x++){ %>
     <div class="col-md-4">
       <div class="card shadow mb-4 mt-2">
         <div class="card-body">
           <img
-            src="http://stay-admin.heroku.com/<%= item.imageId[x].imageUrl %>"
+            src="https://admin-staycation.herokuapp.com/<%= item.imageId[x].imageUrl %>"
             alt="image"
             style="width: 100%; display: block;"
           />
         </div>
       </div>
     </div>
-    <%} %>
+    <% } %>
   </div>
-  <a href="/admin/item" class="btn btn-dark">Back</a>
+  <a href="/admin/item" class="btn btn-warning">Back</a>
 </div>
